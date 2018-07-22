@@ -32,7 +32,6 @@ public class DefaultPromiseTest {
             promise.addListener(new FutureListener<Void>() {
                 @Override
                 public void operationComplete(Future<Void> future) throws Exception {
-                    System.out.println("xxxxx");
                     latch.countDown();
                 }
             });
@@ -48,7 +47,6 @@ public class DefaultPromiseTest {
                     public void run() {
                         for (int i = 0; i < numListenersAfter; i++) {
                             promise.addListener(future -> {
-                                System.out.println("xxxxx");
                                 latch.countDown();
                             });
                         }
@@ -69,7 +67,7 @@ public class DefaultPromiseTest {
      */
     @Test
     private void testFutureStyleWithWaitNotifyAll() throws ExecutionException, InterruptedException {
-        Promise<Object> promise = new DefaultPromise<>();
+        Promise<Model> promise = new DefaultPromise<>();
 
         /**
          * 一个线程在执行get()，进行wait()
@@ -79,8 +77,7 @@ public class DefaultPromiseTest {
             public void run() {
                 try {
                     Object result = promise.get();// 等待条件
-                    System.out.println(result);
-                    System.out.println(((Model)result).getId() + ((Model)result).getName());
+                    // 之后做相应的业务逻辑
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 } catch (ExecutionException e) {
@@ -89,18 +86,16 @@ public class DefaultPromiseTest {
             }
         }).start();
 
+        // sleep 2s 使第一个线程先等待着
         Thread.sleep(2000);
 
-        final Model model = new Model();
         /**
-         * 另外一个线程在设置值，notify唤醒wait()线程
+         * 另外一个线程在设置值，notifyAll唤醒wait()线程
          */
         new Thread(new Runnable() {
             @Override
             public void run() {
-                model.setId(1L);
-                model.setName("haha");
-                promise.setSuccess(model);
+                promise.setSuccess(new Model(1L));
             }
         }).start();
     }
@@ -209,12 +204,9 @@ public class DefaultPromiseTest {
         latch.await();
     }
 
-    static class Model {
+    class Model {
         private Long id;
         private String name;
-
-        public Model() {
-        }
 
         public Model(Long id) {
             this.id = id;

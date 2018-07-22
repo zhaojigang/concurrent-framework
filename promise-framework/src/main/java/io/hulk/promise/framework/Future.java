@@ -4,8 +4,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * @author zhaojigang
- * @date 2018/7/16
+ * from netty4.1
  */
 public interface Future<V> extends java.util.concurrent.Future<V> {
     /**

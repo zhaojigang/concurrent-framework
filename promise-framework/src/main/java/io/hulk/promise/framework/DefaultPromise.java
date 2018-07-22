@@ -219,7 +219,7 @@ public class DefaultPromise<V> extends AbstractFuture<V> implements Promise<V> {
         ObjectUtil.checkNotNull(listeners, "listeners");
         synchronized (this) {
             if (this.listeners == null) {
-                listeners = new ArrayList<>();
+                this.listeners = new ArrayList<>();
             }
             this.listeners.addAll(listeners);
         }
