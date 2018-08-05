@@ -12,6 +12,7 @@
     <modules>
         <module>promise-framework</module>
         <module>common</module>
+        <module>fast-thread-framework</module>
     </modules>
 
     <dependencyManagement>

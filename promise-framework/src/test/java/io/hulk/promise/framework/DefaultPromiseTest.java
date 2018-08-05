@@ -1,5 +1,6 @@
 package io.hulk.promise.framework;
 
+import io.hulk.fast.thread.framework.FastThreadExecutors;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -8,8 +9,11 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author zhaojigang
@@ -56,7 +60,8 @@ public class DefaultPromiseTest {
         }).start();
 
         try {
-            Assert.assertTrue(latch.await(100, TimeUnit.SECONDS), "expect notify " + (numListenersBefore + numListenersAfter) + " listeners");
+            Assert.assertTrue(latch.await(100, TimeUnit.SECONDS),
+                "expect notify " + (numListenersBefore + numListenersAfter) + " listeners");
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -100,6 +105,29 @@ public class DefaultPromiseTest {
         }).start();
     }
 
+    private static final AtomicInteger index = new AtomicInteger();
+
+    private static final Executor promiseTest = FastThreadExecutors.newCachedFastThreadPool("nettyPromiseTest");
+
+    @Test
+    public void testFastThreadPoolWithPromise() {
+        DefaultPromise<Void> promise = new DefaultPromise<>();
+
+        // 1、为promise添加10个监听器FutureListener
+        for (int i = 0; i < 10; i++) {
+            promise.addListener(future -> System.out.println("haha:" + index.getAndIncrement()));
+        }
+
+        // 2、使用线程池执行业务逻辑（这里只是设置promise的值，触发promise的监听器执行操作）
+        promiseTest.execute(() -> promise.setSuccess(null));
+
+        try {
+            Thread.sleep(5000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Test
     private void testListenerAddWhenCompleteFailure() throws InterruptedException {
         testListenerAddWhenComplete(new RuntimeException("失败"));
@@ -110,7 +138,7 @@ public class DefaultPromiseTest {
         testListenerAddWhenComplete(null);
     }
 
-    @Test(expectedExceptions = {CancellationException.class})
+    @Test(expectedExceptions = { CancellationException.class })
     public void testCancellationExceptionIsThrownWhenBlockingGet() throws ExecutionException, InterruptedException {
         Promise<Void> promise = new DefaultPromise<>();
         // 设置result为CancellationException
@@ -119,8 +147,9 @@ public class DefaultPromiseTest {
         promise.get();
     }
 
-    @Test(expectedExceptions = {CancellationException.class})
-    public void testCancellationExceptionIsThrownWhenBlockingGetWithTimeout() throws ExecutionException, InterruptedException, TimeoutException {
+    @Test(expectedExceptions = { CancellationException.class })
+    public void testCancellationExceptionIsThrownWhenBlockingGetWithTimeout() throws ExecutionException,
+                                                                              InterruptedException, TimeoutException {
         Promise<Void> promise = new DefaultPromise<>();
         // 设置result为CancellationException
         promise.cancel(false);
@@ -205,7 +234,7 @@ public class DefaultPromiseTest {
     }
 
     class Model {
-        private Long id;
+        private Long   id;
         private String name;
 
         public Model(Long id) {
