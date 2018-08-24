@@ -187,6 +187,14 @@ public class FastThreadLocal<V> {
         variablesToRemove.remove(threadLocal);
     }
 
+    public final boolean isSet(){
+        return isSet(InternalThreadLocalMap.getIfSet());
+    }
+
+    private final boolean isSet(InternalThreadLocalMap threadLocalMap) {
+        return threadLocalMap != null && threadLocalMap.isIndexedVariableSet(index);
+    }
+
     /**
      * 初始化参数：由子类复写
      */

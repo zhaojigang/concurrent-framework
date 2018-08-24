@@ -22,11 +22,6 @@
             <artifactId>fast-thread-framework</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <scope>test</scope>
-        </dependency>
         <!-- slf4j + log4j2 -->
         <dependency>
             <groupId>org.slf4j</groupId>

@@ -214,4 +214,8 @@ public class InternalThreadLocalMap {
         return cleanerFlags != null && cleanerFlags.get(index);
     }
 
+    public boolean isIndexedVariableSet(int index) {
+        Object[] lookup = this.indexedVariables;
+        return index < lookup.length && lookup[index] != UNSET;
+    }
 }

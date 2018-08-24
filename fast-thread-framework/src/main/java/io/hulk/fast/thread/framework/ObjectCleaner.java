@@ -101,9 +101,9 @@ public class ObjectCleaner {
      * This should only be used if there are no other ways to execute some cleanup once the Object is not reachable
      * anymore because it is not a cheap way to handle the cleanup.
      */
-    public static void register(Thread current, Runnable runnable) {
+    public static void register(Object object, Runnable runnable) {
         // 1、创建 AutomaticCleanerReference
-        AutomaticCleanerReference reference = new AutomaticCleanerReference(current, runnable);
+        AutomaticCleanerReference reference = new AutomaticCleanerReference(object, runnable);
         // 2、将当前的 AutomaticCleanerReference 添加到LIVE_SET
         LIVE_SET.add(reference);
         // 3、cas启动cleaner线程:确保只有一个清理线程在run
