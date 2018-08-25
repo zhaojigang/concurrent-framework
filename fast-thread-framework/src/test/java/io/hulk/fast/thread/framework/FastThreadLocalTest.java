@@ -71,12 +71,13 @@ public class FastThreadLocalTest {
         });
     }
 
-
-
     @Test
-    public void testRemove() {
+    public void testRemoveAll() {
+        FastThreadLocal<Object> threadLocal1 = new FastThreadLocal<>();
+        FastThreadLocal<Object> threadLocal2 = new FastThreadLocal<>();
+        threadLocal1.get();
+        threadLocal2.get();
 
+        FastThreadLocal.removeAll();
     }
-
-
 }

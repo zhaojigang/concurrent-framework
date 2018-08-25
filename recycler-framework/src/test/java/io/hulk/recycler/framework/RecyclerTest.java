@@ -5,6 +5,8 @@ import lombok.Data;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * @author zhaojigang
  * @date 2018/8/17
@@ -64,37 +66,34 @@ public class RecyclerTest {
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
-    public void differentThreadGetAndMultiRecycle() throws InterruptedException {
-        // 1、从回收池获取对象
-        User user1 = userRecycler.get();
-        // 2、设置对象并使用
-        user1.setName("hello,java");
-
-        Thread thread1 = new Thread(()->{
-            System.out.println(user1);
-            // 3、对象恢复出厂设置
-            user1.setName(null);
-            // 4、回收对象到对象池
-            user1.recycle();
+    public void testMultipleRecycleAtDifferentThread() throws InterruptedException {
+        final User object = userRecycler.get();
+        final AtomicReference<IllegalStateException> exceptionStore = new AtomicReference<>();
+        final Thread thread1 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                object.recycle();
+            }
         });
-
         thread1.start();
         thread1.join();
 
-        Thread thread2 = new Thread(()->{
-            System.out.println(user1);
-            // 3、对象恢复出厂设置
-            user1.setName(null);
-            // 4、回收对象到对象池
-            user1.recycle();
+        final Thread thread2 = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    object.recycle();
+                } catch (IllegalStateException e) {
+                    exceptionStore.set(e);
+                }
+            }
         });
-
         thread2.start();
         thread2.join();
-
-        // 5、从回收池获取对象
-        User user2 = userRecycler.get();
-        Assert.assertSame(user1, user2);
+        IllegalStateException exception = exceptionStore.get();
+        if (exception != null) {
+            throw exception;
+        }
     }
 
     @Test

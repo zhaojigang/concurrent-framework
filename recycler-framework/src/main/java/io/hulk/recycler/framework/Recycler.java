@@ -495,7 +495,7 @@ public abstract class Recycler<T> {
             }
 
             if (this.lastRecycledId != this.recycledId) {
-                throw new IllegalStateException("recycled multiple times");
+                throw new IllegalStateException("recycled already");
             }
             /**
              * 回收对象，this指的是当前的DefaultHandle对象

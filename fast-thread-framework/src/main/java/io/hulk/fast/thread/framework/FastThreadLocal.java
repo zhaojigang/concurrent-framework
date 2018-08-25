@@ -102,7 +102,12 @@ public class FastThreadLocal<V> {
             Object v = threadLocalMap.indexedVariable(VARIABLES_TO_REMOVE_INDEX);
             if (v != null && v != InternalThreadLocalMap.UNSET) {
                 Set<FastThreadLocal<?>> threadLocals = (Set<FastThreadLocal<?>>) v;
-                for (FastThreadLocal<?> threadLocal : threadLocals) {
+                /**
+                 * 这里为什么需要将set先转换为数组？
+                 * 因为set的for-remove模式会报并发修改异常，array不会
+                 */
+                FastThreadLocal[] threadLocalArray = threadLocals.toArray(new FastThreadLocal[0]);
+                for (FastThreadLocal<?> threadLocal : threadLocalArray) {
                     threadLocal.remove();
                 }
             }
