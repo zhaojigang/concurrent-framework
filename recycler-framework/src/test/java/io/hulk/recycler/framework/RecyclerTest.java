@@ -1,6 +1,5 @@
 package io.hulk.recycler.framework;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -19,8 +18,15 @@ public class RecyclerTest {
         }
     };
 
+    private static final Recycler<Animal> animalRecycler = new Recycler<Animal>() {
+        @Override
+        protected Animal newObject(Handle<Animal> handle) {
+            return new Animal(handle);
+        }
+    };
+
     @Test
-    public void sameThreadGetAndRecycle() {
+    public void testGetAndRecycleAtSameThread() {
         // 1、从回收池获取对象
         User user1 = userRecycler.get();
         // 2、设置对象并使用
@@ -36,7 +42,22 @@ public class RecyclerTest {
     }
 
     @Test
-    public void differentThreadGetAndRecycle() throws InterruptedException {
+    public void testGetAndRecycleAtSameThread2() {
+        // 1、从回收池获取对象
+        User user1 = userRecycler.get();
+        Animal animal1 = animalRecycler.get();
+        // 2、回收对象到对象池
+        user1.recycle();
+        animal1.recycle();
+        // 3、从回收池获取对象
+        User user2 = userRecycler.get();
+        Animal animal2 = animalRecycler.get();
+        Assert.assertSame(user1, user2);
+        Assert.assertSame(animal1, animal2);
+    }
+
+    @Test
+    public void testGetAndRecycleAtDifferentThread() throws InterruptedException {
         // 1、从回收池获取对象
         User user1 = userRecycler.get();
         // 2、设置对象并使用
@@ -56,6 +77,55 @@ public class RecyclerTest {
         // 5、从回收池获取对象
         User user2 = userRecycler.get();
         Assert.assertSame(user1, user2);
+    }
+
+    @Test
+    public void testGetAndRecycleAtDifferentThread2() throws InterruptedException {
+        // 1、从回收池获取对象
+        User user1 = userRecycler.get();
+        Animal animal1 = animalRecycler.get();
+        Thread thread = new Thread(()->{
+            // 2、回收对象到对象池
+            user1.recycle();
+            animal1.recycle();
+        });
+
+        thread.start();
+        thread.join();
+
+        // 3、从回收池获取对象
+        User user2 = userRecycler.get();
+        Animal animal2 = animalRecycler.get();
+        Assert.assertSame(user1, user2);
+        Assert.assertSame(animal1, animal2);
+    }
+
+    @Test
+    public void testGetAndRecycleAtDifferentThread3() throws InterruptedException {
+        // 1、从回收池获取对象
+        User user1 = userRecycler.get();
+        Animal animal1 = animalRecycler.get();
+        Thread thread = new Thread(()->{
+            // 2、回收对象到对象池
+            user1.recycle();
+        });
+
+        thread.start();
+        thread.join();
+
+        Thread thread2 = new Thread(()->{
+            // 2、回收对象到对象池
+            animal1.recycle();
+        });
+
+        thread2.start();
+        thread2.join();
+
+        // 3、从回收池获取对象
+        User user2 = userRecycler.get();
+        Animal animal2 = animalRecycler.get();
+        Assert.assertSame(user1, user2);
+        Assert.assertSame(animal1, animal2);
     }
 
     @Test(expectedExceptions = IllegalStateException.class)
@@ -120,6 +190,19 @@ public class RecyclerTest {
         private Recycler.Handle<User> handle;
 
         public User(Recycler.Handle<User> handle) {
+            this.handle = handle;
+        }
+
+        public void recycle() {
+            handle.recycle(this);
+        }
+    }
+
+    @Data
+    static final class Animal{
+        private Recycler.Handle<Animal> handle;
+
+        public Animal(Recycler.Handle<Animal> handle) {
             this.handle = handle;
         }
 

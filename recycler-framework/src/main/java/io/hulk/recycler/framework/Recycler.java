@@ -124,7 +124,6 @@ public abstract class Recycler<T> {
 
     /**
      * 获取对象
-     * 由于get()方法只会由Recycler的子类进行调用，所以此处使用protected修饰，而不是public
      */
     public final T get() {
         /**
@@ -213,7 +212,7 @@ public abstract class Recycler<T> {
          * A: 假设线程A正要读取对象X，此时需要从其他线程的WeakOrderQueue中读取，假设此时线程B正好创建Queue，并向Queue中放入一个对象X；假设恰好次Queue就是线程A的Stack的head
          * 使用volatile可以立即读取到该queue。
          *
-         * 对于head的设置，具有同步问题。具体见此处的volatile和synchronized void setHead(WeakOrderQueue queue)
+         * 对于head的设置，具有同步问题。具体见此处pre的volatile和synchronized void setHead(WeakOrderQueue queue)
          */
         private volatile WeakOrderQueue head;
         /**
@@ -418,7 +417,7 @@ public abstract class Recycler<T> {
          * 线程B先执行queue.setNext(head);此时线程B的queue.next=null->线程C执行queue.setNext(head);线程C的queue.next=null
          * -> 线程B执行head = queue;设置head为线程B的queue -> 线程C执行head = queue;设置head为线程C的queue
          *
-         * 注意：此时线程B和线程C的queue没有连起来，则之后的poll()就不会从B进行查询。（B就是资源泄露）
+         * 注意：此时线程B和线程C的queue没有连起来，则之后的pop()就不会从B进行查询。（B就是资源泄露）
          */
         synchronized void setHead(WeakOrderQueue queue) {
             queue.setNext(head);
@@ -494,6 +493,7 @@ public abstract class Recycler<T> {
                 throw new IllegalArgumentException("object does not belong to handle");
             }
 
+            // https://github.com/netty/netty/issues/8220
             if (this.lastRecycledId != this.recycledId) {
                 throw new IllegalStateException("recycled already");
             }
@@ -596,6 +596,7 @@ public abstract class Recycler<T> {
             // we lazy set to ensure that setting stack to null appears before we unnull it in the owning thread;
             // this also means we guarantee visibility of an element in the queue if we see the index updated
             // tail本身继承于AtomicInteger，所以此处直接对tail进行+1操作
+            // why lazySet? https://github.com/netty/netty/issues/8215
             tail.lazySet(writeIndex + 1);
 //            tail.set(writeIndex + 1);
         }
@@ -739,9 +740,8 @@ public abstract class Recycler<T> {
 
             /**
              * 在该对象被真正的回收前，执行该方法
-             * 循环释放当前的WeakOrderQueue所占用的所有空间。
-             * 将新建的queue添加到Cleaner中，当queue不可达时，
-             * 调用head中的run()方法回收内存availableSharedCapacity，否则该值将不会增加，影响后续的Link的创建
+             * 循环释放当前的WeakOrderQueue中的Link链表所占用的所有共享空间availableSharedCapacity，
+             * 如果不释放，否则该值将不会增加，影响后续的Link的创建
              */
             @Override
             protected void finalize() throws Throwable {
