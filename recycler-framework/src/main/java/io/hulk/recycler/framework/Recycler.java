@@ -494,7 +494,8 @@ public abstract class Recycler<T> {
             }
 
             // https://github.com/netty/netty/issues/8220
-            if (this.lastRecycledId != this.recycledId) {
+            Stack<T> stack = this.stack;
+            if (lastRecycledId != recycledId || stack == null) {
                 throw new IllegalStateException("recycled already");
             }
             /**
